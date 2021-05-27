@@ -12,38 +12,38 @@
 // Put your code here.
 
     @i
-    M = 1 // i = 1
+    M = 1
     @R0
-    D = M // D contains RAM[0] value
+    D = M
     @n
-    M = D // n = RAM[0]
+    M = D
     @mult
-    M = 0 // mult = 0
+    M = 0
 
 (LOOP)
     @i
-    D = M // D contains value of i
+    D = M
     @n
-    D = D - M // D contains (n - i)
+    D = D - M
     @STOP
-    D;JGT // if (n - i) < 0 goto STOP
+    D;JGT
 
     @mult
-    D = M // D has value of mult
+    D = M
     @R1
-    D = D + M // RAM[1] has the value of succesive addition of mult
+    D = D + M
     @mult
-    M = D // RAM[mult] = sum of values of mult
+    M = D
     @i
-    M = M + 1 // i += 1
+    M = M + 1
     @LOOP
     0;JMP
 
 (STOP)
     @mult
-    D = M 
+    D = M
     @R2
-    M = D // RAM[2] has the value of multiplication
+    M = D
 
 (END)
     @END
