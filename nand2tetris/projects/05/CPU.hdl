@@ -39,5 +39,50 @@ CHIP CPU {
         pc[15];          // address of next instruction
 
     PARTS:
-    // Put your code here:
+    // Mux1
+    Not(in=instruction[15], out=notBit1);
+    Mux16(a=aluOut, b=instruction, sel=notBit1, out=mux1Out);
+    
+    // A register
+    Or(a=notBit1, b=instruction[5], out=aRegLoad);
+    ARegister(in=mux1Out, load=aRegLoad, out=aRegOut, out[0..14]=addressM);    
+    
+    // Mux2
+    And(a=instruction[15], b=instruction[12], out=mux2Sel);
+    Mux16(a=aRegOut, b=inM, sel=mux2Sel, out=mux2Out);
+    
+    // D register
+    And(a=instruction[15], b=instruction[4], out=dRegLoad);
+    DRegister(in=aluOut, load=dRegLoad, out=dRegOut);
+    
+    // Write to M
+    And(a=instruction[15], b=instruction[3], out=writeM);
+
+    // ALU
+    ALU(x=dRegOut, y=mux2Out, zx=instruction[11], nx=instruction[10], zy=instruction[9], ny=instruction[8], f=instruction[7], no=instruction[6], out=aluOut, out=outM, zr=zrOut, ng=ngOut);
+    
+    Not(in=zrOut, out=notZero);
+    Not(in=ngOut, out=greatETZero);
+
+    // PC
+    //// JGT
+    And(a=instruction[15], b=instruction[0], out=jgtC);
+    //// JEQ
+    And(a=instruction[15], b=instruction[1], out=jeqC);
+    //// JLT
+    And(a=instruction[15], b=instruction[2], out=jltC);
+
+    //// Condition for jump satisfied when
+    ////// JGT
+    And(a=greatETZero, b=notZero, out=cond1);
+    And(a=cond1, b=jgtC, out=loadPC1);
+    ////// JEQ
+    And(a=jeqC, b=zrOut, out=loadPC2);
+    ////// JLT
+    And(a=ngOut, b=jltC, out=loadPC3);
+
+    //// Final Load
+    Or(a=loadPC1, b=loadPC2, out=loadPC4);
+    Or(a=loadPC4, b=loadPC3, out=loadPC);
+    PC(in=aRegOut, load=loadPC, inc=true, reset=reset, out[0..14]=pc);
 }
