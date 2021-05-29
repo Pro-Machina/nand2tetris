@@ -23,9 +23,21 @@
  */
 
 CHIP Memory {
-    IN in[16], load, address[15];
+    IN in[16], load, address[15]; // in[16] == outM, "If the current instruction needs to write a value to M, the value is placed in outM."
     OUT out[16];
 
+    // RAM = [0, 011111111111111(15)], SCREEN = [100000000000000(15), 101111111111111(15)], KBD = 110000000000000(15)
+
     PARTS:
-    // Put your code here:
+    // First 2 bits decide which chip to load
+    DMux4Way(in=load, sel=address[13..14], a=loadRAMfirst, b=loadRAMlast, c=loadSCREEN, d=loadKBD);
+    Or(a=loadRAMfirst, b=loadRAMlast, out=loadRAM);
+
+    // Loading the chip
+    RAM16K(in=in, load=loadRAM, address=address[0..13], out=outRAM);
+    Screen(in=in, load=loadSCREEN, address=address[0..12], out=outSCREEN);
+    Keyboard(out=outKBD);
+
+    // Getting the output based on the first 2 bits
+    Mux4Way16(a=outRAM, b=outRAM, c=outSCREEN, d=outKBD, sel=address[13..14], out=out);
 }
