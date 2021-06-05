@@ -27,14 +27,21 @@ symbTable[6][1] = 4
 def int2bin (n, bin_dig):
     """ Inputs a number and outputs binary number with bin_dig numbers """
 
-    bin_dig = np.zeros(bin_dig+1)
+    req_size_arr = np.zeros(bin_dig)
     n = bin(n)
     n = np.array(list(n[2:]), dtype=int)
+    print(n)
     size_bin = int(np.shape(n)[0])
 
-    for b in reversed(range(size_bin)):
-        bin_dig[b] = n[b]
-    return bin_dig[::-1]
+    # for b in reversed(range(size_bin)):
+    #     bin_dig[b] = n[b]
+    #     print(bin_dig, n)
+
+    while size_bin > 0:
+        size_bin -= 1
+        bin_dig -= 1
+        req_size_arr[bin_dig] = n[size_bin]
+    return req_size_arr
 
 def checkInt(n):
     """ To check if the string can be converted to int type """
@@ -49,10 +56,10 @@ def Ainstruction (bin_num):
     """ Returns 16 bit array with A instruction syntax """
 
     bin_num = bin_num[::-1]
-    np.append(bin_num, 0)
+    bin_num = np.append(bin_num, 0)
     return bin_num[::-1]
 
-def addSym (symbol, type = '@', line_num = 0, table = symbTable):
+def addSym (symbol, type_start = '@', line_num = 0, table = symbTable):
     """ Adds the symbol to the table if not already added """
 
     symbol = symbol.strip('\n')
@@ -99,9 +106,9 @@ with open('Add_noBS.asm', 'r') as f:
         num += 1
         if lines[0] == '@':
             if not checkInt(lines[1:]):
-                symbol_table = addSym(lines[1:], type = '@', line_num = 0, table = symbol_table)
+                symbol_table = addSym(lines[1:], type_start = '@', line_num = 0, table = symbol_table)
         elif lines[0] == '(':
-            symbol_table = addSym(lines[1:-2], type='(', line_num=num, table=symbol_table)
+            symbol_table = addSym(lines[1:-2], type_start='(', line_num=num, table=symbol_table)
 
 with open('Add_noBS.asm', 'r') as f:
     num = 0
@@ -110,6 +117,7 @@ with open('Add_noBS.asm', 'r') as f:
         num += 1
         if lines[0] == '@':
             if checkInt(lines[1:]):
+                print(int(lines[1:]))
                 bit = int2bin(int(lines[1:]), 15)
                 bit = Ainstruction(bit)
                 bina_str = ''
@@ -119,14 +127,15 @@ with open('Add_noBS.asm', 'r') as f:
                 str_arr[num-1] = bina_str
             else:
                 for symbols in symbol_table:
-                    a = symbols[0]
-                    b = lines[1:]
-                    print(a, b, str(a) == str(b))
-                    if lines[1:] == symbols[0]:
+                    if lines[1:].strip('\n') == symbols[0].strip('\n'):
+                        print(int(symbols[:][1]))
                         bit = int2bin(int(symbols[:][1]), 15)
                         bit = Ainstruction(bit)
-                        bit = str(bit)
-                        str_arr[num] = bit
+                        bina_str = ''
+                        for bina in bit:
+                            bina_str += str(int(bina))
+
+                        str_arr[num-1] = bina_str
         elif lines[0] == '(':
             if checkInt(lines[1:-2]):
                 bit = int2bin(int(lines[1:-2]), 15)
