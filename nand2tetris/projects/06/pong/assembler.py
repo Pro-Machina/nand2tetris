@@ -76,7 +76,9 @@ def addSym (symbol, type_start = '@', line_num = 0, table = symbTable):
     """ Adds the symbol to the table if not already added """
 
     symbol = symbol.strip('\n')
+    print(symbol)
     size = np.shape(table)
+    print(size)
     table_row = int(size[0])
     table_col = int(size[1])
 
@@ -102,9 +104,11 @@ def addSym (symbol, type_start = '@', line_num = 0, table = symbTable):
 
 
 ## First iteration to remove comments, blank lines and indentations
-with open('Add_noBS.asm', 'w') as fo:
+file_name = input('Enter file name with extension: ')
+file_name_noBS = file_name.strip('.asm') + '_noBS' + '.asm'
+with open(file_name_noBS, 'w+') as fo:
     """ Removing comment lines and writing in fo """
-    with open('Add.asm', 'r') as f:
+    with open(file_name, 'r') as f:
         for lines in f:
             # lines = lines.strip("   ")
             lines = lines.replace(" ", "")
@@ -112,7 +116,7 @@ with open('Add_noBS.asm', 'w') as fo:
                 fo.write(lines)
 
 ## Second iteration to add symbols to symbol-table
-with open('Add_noBS.asm', 'r') as f:
+with open(file_name_noBS, 'r') as f:
 
     symbol_table = symbTable
 
@@ -125,7 +129,7 @@ with open('Add_noBS.asm', 'r') as f:
         elif lines[0] == '(':
             symbol_table = addSym(lines[1:-2], type_start='(', line_num=num, table=symbol_table)
 
-with open('Add_noBS.asm', 'r') as f:
+with open(file_name_noBS, 'r') as f:
 
     # Opening Instruction to Binary conversion table using pandas
     conversion = pa.read_excel('Instructions.xlsx')
@@ -236,7 +240,8 @@ with open('Add_noBS.asm', 'r') as f:
 
 
     out_arr = str_arr[:num]
-    with open('Add.hack', 'w') as write:
+    file_name_hack = file_name.strip('.asm') + '.hack'
+    with open('Add.hack', 'w+') as write:
         for binary in out_arr:
             print(binary)
             write.write(binary + '\n')
