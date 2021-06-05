@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pa
 
 bin_15 = np.zeros(15)
 bin_16 = np.zeros(16)
@@ -26,9 +27,9 @@ symbTable[6][1] = 4
 def int2bin (n, bin_dig):
     """ Inputs a number and outputs binary number with bin_dig numbers """
 
-    bin_dig = np.zeros(bin_dig)
+    bin_dig = np.zeros(bin_dig+1)
     n = bin(n)
-    n = np.array(list(n), dtype=int)
+    n = np.array(list(n[2:]), dtype=int)
     size_bin = int(np.shape(n)[0])
 
     for b in reversed(range(size_bin)):
@@ -78,28 +79,70 @@ def addSym (symbol, type = '@', line_num = 0, table = symbTable):
     else:
         return table
 
-
+## First iteration to remove comments, blank lines and indentations
 with open('Add_noBS.asm', 'w') as fo:
     """ Removing comment lines and writing in fo """
     with open('Add.asm', 'r') as f:
         for lines in f:
-            lines = lines.strip("   ")
+            # lines = lines.strip("   ")
+            lines = lines.replace(" ", "")
             if (not lines[0] == '/') and (not lines.isspace()):
                 fo.write(lines)
 
+## Second iteration to add symbols to symbol-table
 with open('Add_noBS.asm', 'r') as f:
-    # f_contents = f.read()
-    # print(f_contents)
 
-    table_new = symbTable
+    symbol_table = symbTable
 
     num = 0
     for lines in f:
         num += 1
         if lines[0] == '@':
             if not checkInt(lines[1:]):
-                table_new = addSym(lines[1:], type = '@', line_num = 0, table = table_new)
+                symbol_table = addSym(lines[1:], type = '@', line_num = 0, table = symbol_table)
         elif lines[0] == '(':
-            table_new = addSym(lines[1:-2], type='(', line_num=num, table=table_new)
+            symbol_table = addSym(lines[1:-2], type='(', line_num=num, table=symbol_table)
 
-print(table_new)
+with open('Add_noBS.asm', 'r') as f:
+    num = 0
+    str_arr = np.empty((9999999), dtype='object')
+    for lines in f:
+        num += 1
+        if lines[0] == '@':
+            if checkInt(lines[1:]):
+                bit = int2bin(int(lines[1:]), 15)
+                bit = Ainstruction(bit)
+                bina_str = ''
+                for bina in bit:
+                    bina_str += str(int(bina))
+
+                str_arr[num-1] = bina_str
+            else:
+                for symbols in symbol_table:
+                    a = symbols[0]
+                    b = lines[1:]
+                    print(a, b, str(a) == str(b))
+                    if lines[1:] == symbols[0]:
+                        bit = int2bin(int(symbols[:][1]), 15)
+                        bit = Ainstruction(bit)
+                        bit = str(bit)
+                        str_arr[num] = bit
+        elif lines[0] == '(':
+            if checkInt(lines[1:-2]):
+                bit = int2bin(int(lines[1:-2]), 15)
+                bit = Ainstruction(bit)
+                bina_str = ''
+                for bina in bit:
+                    bina_str += str(int(bina))
+
+                str_arr[num-1] = bina_str
+            else:
+                for symbols in symbol_table:
+                    if lines[1:] == symbols[0]:
+                        bit = int2bin(int(symbols[:][1]), 15)
+                        bit = Ainstruction(bit)
+                        bit = str(bit)
+                        str_arr[num] = bit
+        # else:
+    out_arr = str_arr[:num]
+    print(out_arr)

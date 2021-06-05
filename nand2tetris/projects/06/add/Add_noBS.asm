@@ -1,4 +1,4 @@
-@ABS
+@SCREEN
 D=A
 @3
 D=D+A
