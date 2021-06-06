@@ -72,7 +72,7 @@ def Ainstruction (bin_num):
 #     c_str += bin_str
 #     return c_str
 
-def addSym (symbol, type_start = '@', line_num = 0, table = symbTable):
+def addSym (symbol, type_start = '@', line_num = 0, table = symbTable, c_count = 0):
     """ Adds the symbol to the table if not already added """
 
     symbol = symbol.strip('\n')
@@ -92,7 +92,7 @@ def addSym (symbol, type_start = '@', line_num = 0, table = symbTable):
             table = np.vstack((table, stack_symb))
             return table
         elif type_start == '(':
-            address_nxt = line_num + 1
+            address_nxt = line_num - c_count
             stack_symb = np.array([str(symbol), int(address_nxt)], dtype='object')
             table = np.vstack((table, stack_symb))
             return table
@@ -119,10 +119,12 @@ with open(file_name_noBS, 'r') as f:
     symbol_table = symbTable
 
     num = 0
+    c_count = 0
     for lines in f:
         num += 1
         if lines[0] == '(':
-            symbol_table = addSym(lines[1:-2], type_start='(', line_num=num, table=symbol_table)
+            c_count += 1
+            symbol_table = addSym(lines[1:-2], type_start='(', line_num=num, table=symbol_table, c_count=c_count)
 
     num = 0
     for lines in f:
