@@ -86,12 +86,12 @@ def addSym (symbol, type_start = '@', line_num = 0, table = symbTable):
             flag_exist = 1
 
     if not flag_exist:
-        if type == '@':
+        if type_start == '@':
             address_nxt = int(table[table_row-1][1]) + 1
             stack_symb = np.array([str(symbol), int(address_nxt)], dtype='object')
             table = np.vstack((table, stack_symb))
             return table
-        elif type == '(':
+        elif type_start == '(':
             address_nxt = line_num + 1
             stack_symb = np.array([str(symbol), int(address_nxt)], dtype='object')
             table = np.vstack((table, stack_symb))
@@ -102,9 +102,11 @@ def addSym (symbol, type_start = '@', line_num = 0, table = symbTable):
 
 
 ## First iteration to remove comments, blank lines and indentations
-with open('Add_noBS.asm', 'w') as fo:
+file_name = input('Enter file name with extension: ')
+file_name_noBS = file_name.strip('.asm') + '_noBS' + '.asm'
+with open(file_name_noBS, 'w+') as fo:
     """ Removing comment lines and writing in fo """
-    with open('Add.asm', 'r') as f:
+    with open(file_name, 'r') as f:
         for lines in f:
             # lines = lines.strip("   ")
             lines = lines.replace(" ", "")
@@ -112,20 +114,25 @@ with open('Add_noBS.asm', 'w') as fo:
                 fo.write(lines)
 
 ## Second iteration to add symbols to symbol-table
-with open('Add_noBS.asm', 'r') as f:
+with open(file_name_noBS, 'r') as f:
 
     symbol_table = symbTable
 
     num = 0
     for lines in f:
         num += 1
-        if lines[0] == '@':
-            if not checkInt(lines[1:]):
-                symbol_table = addSym(lines[1:], type_start = '@', line_num = 0, table = symbol_table)
-        elif lines[0] == '(':
+        if lines[0] == '(':
             symbol_table = addSym(lines[1:-2], type_start='(', line_num=num, table=symbol_table)
 
-with open('Add_noBS.asm', 'r') as f:
+    num = 0
+    for lines in f:
+        num += 1
+        if lines[0] == '@':
+            if not checkInt(lines[1:]):
+                symbol_table = addSym(lines[1:], type_start = '@', line_num = num, table = symbol_table)
+
+## Changing instructions to binary
+with open(file_name_noBS, 'r') as f:
 
     # Opening Instruction to Binary conversion table using pandas
     conversion = pa.read_excel('Instructions.xlsx')
@@ -137,11 +144,33 @@ with open('Add_noBS.asm', 'r') as f:
     num = 0
     str_arr = np.empty(9999999, dtype='object')
     for lines in f:
-        num += 1
+
+        slash = 0
+        for sl in range(len(lines)):
+            if lines[sl] == '/':
+                slash = sl
+                lines = lines[:slash]
+                break
+
+        # num += 1
         dest = ''
         comp = ''
         jump = ''
-        if lines[0] == '@': # A Instruction
+        if lines[0] == '(':
+            continue
+        #     if checkInt(lines[1:-2]):
+        #         bit = int2bin(int(lines[1:-2]), 15)
+        #         bit = Ainstruction(bit)
+        #         str_arr[num-1] = bin2string(bit)
+        #     else:
+        #         for symbols in symbol_table:
+        #             if lines[1:-2].strip('\n') == symbols[0].strip('\n'):
+        #                 bit = int2bin(int(symbols[:][1]), 15)
+        #                 bit = Ainstruction(bit)
+        #                 str_arr[num-1] = bin2string(bit)
+
+        elif lines[0] == '@': # A Instruction
+            num += 1
             if checkInt(lines[1:]):
                 bit = int2bin(int(lines[1:]), 15)
                 bit = Ainstruction(bit)
@@ -153,32 +182,24 @@ with open('Add_noBS.asm', 'r') as f:
                         bit = Ainstruction(bit)
                         str_arr[num-1] = bin2string(bit)
 
-        elif lines[0] == '(': # A Instruction
-            if checkInt(lines[1:-2]):
-                bit = int2bin(int(lines[1:-2]), 15)
-                bit = Ainstruction(bit)
-                str_arr[num-1] = bin2string(bit)
-            else:
-                for symbols in symbol_table:
-                    if lines[1:-2].strip('\n') == symbols[0].strip('\n'):
-                        bit = int2bin(int(symbols[:][1]), 15)
-                        bit = Ainstruction(bit)
-                        str_arr[num-1] = bin2string(bit)
-
-        else:
+        else: # C Instructions
+            num += 1
             lines.strip('\n')
             eq = 0
             semico = 0
             line_size = len(lines)
             w = 0
             while w < line_size:
-                if not lines[w] == '=':
-                    dest += lines[w]
+                if '=' in lines:
+                    if not lines[w] == '=':
+                        dest += lines[w]
+                    else:
+                        eq = w + 1
+                        break
+                    w += 1
                 else:
-                    eq = w + 1
                     break
-                w += 1
-            while (eq < line_size) and (eq > 0):
+            while (eq < line_size) and (eq >= 0):
                 if not lines[eq] == ';':
                     comp += lines[eq]
                 else:
@@ -200,34 +221,33 @@ with open('Add_noBS.asm', 'r') as f:
                     comp_col = cc
 
             a = '0'
-            if not comp == '':
-                for rc in range(conv_row):
-                    if comp == conversion[rc][comp_col]:
-                        str_arr[num-1] += a
-                        str_arr[num-1] += conversion[rc][comp_col+2]
-                    elif comp == conversion[rc][comp_col+1]:
-                        a = '1'
-                        str_arr[num-1] += a
-                        str_arr[num-1] += conversion[rc][comp_col + 2]
+            for rc in range(conv_row):
+                if comp == str(conversion[rc][comp_col]):
+                    str_arr[num-1] += a
+                    str_arr[num-1] += conversion[rc][comp_col+2]
+                elif comp == conversion[rc][comp_col+1]:
+                    a = '1'
+                    str_arr[num-1] += a
+                    str_arr[num-1] += conversion[rc][comp_col + 2]
+
+            # For dest instructions
+            if not dest == '':
+                dest_col = 0
+                for cd in range(conv_col):
+                    if conversion[0][cd] == 'dest':
+                        dest_col = cd
+                for rd in range(conv_row):
+                    if conversion[rd][dest_col] == dest:
+                        str_arr[num-1] += conversion[rd][dest_col+1]
             else:
                 str_arr[num-1] += '000'
 
-            # For dest instructions
-            dest_col = 0
-            for cd in range(conv_col):
-                if conversion[0][cd] == 'dest':
-                    dest_col = cd
-            for rd in range(conv_row):
-                if conversion[rd][dest_col] == dest:
-                    str_arr[num-1] += conversion[rd][dest_col+1]
-
-
             # For jump instructions
             jump_col = 0
-            for cj in range(conv_col):
-                if conversion[0][cj] == 'jump':
-                    jump_col = cj
             if not jump == '':
+                for cj in range(conv_col):
+                    if conversion[0][cj] == 'jump':
+                        jump_col = cj
                 for rj in range(conv_row):
                     if jump == conversion[rj][jump_col]:
                         str_arr[num-1] += conversion[rj][jump_col+1]
@@ -235,8 +255,9 @@ with open('Add_noBS.asm', 'r') as f:
                 str_arr[num-1] += '000'
 
 
-    out_arr = str_arr[:num]
-    with open('Add.hack', 'w') as write:
+    out_arr = str_arr[str_arr != np.array(None)]
+    file_name_hack = file_name.strip('.asm') + '.hack'
+    with open(file_name_hack, 'w+') as write:
         for binary in out_arr:
             print(binary)
             write.write(binary + '\n')
